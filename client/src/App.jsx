@@ -4,6 +4,9 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Home from "./pages/Home";
 import Navbar from './components/Navbar';
 import ComplaintForm from './pages/ComplaintForm';
+import Login from "./pages/Login";
+import Footer from "./components/Footer";
+
 function App() {
 
   return (
@@ -23,7 +26,15 @@ function App() {
                 <ComplaintForm />
               }
             />
+            <Route
+              path="/login"
+              element={
+                <Login />
+              }
+            />
           </Routes>
+          <Footer />
+
         </Router>
       
     </>
