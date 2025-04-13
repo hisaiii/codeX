@@ -1,30 +1,17 @@
-import express from "express";
-// import cookieParser from "cookie-parser";
-import cors from "cors";
-import dotenv from "dotenv";
-// import { errorHandler } from "./middlewares/errorHandler.js";
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { ConnectDB } from './db/db.js';
+import authRoutes from './routes/auth.routes.js';
 
-
-dotenv.config()
+dotenv.config();
 const app = express();
 
-app.use(cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
-    credentials: true, // Allow credentials (cookies, authentication headers)
-}));
-app.use(express.static("public"));
-app.use(express.json({limit:"16kb"}));
-app.use(express.urlencoded({extended:true,limit:"16kb"}));
+app.use(cors());
+app.use(express.json());
 
+app.use("/api/auth", authRoutes);
 
+ConnectDB();
 
-
-// app.use("error",errorHandler);
-
-// import adminRoutes from "./routes/admin.routes.js";
-// import facultyRoutes from "./routes/faculty.routes.js";
-
-// app.use("/api/admin", adminRoutes);
-// app.use("/api/faculty", facultyRoutes);
-// 
-export {app};
+export  {app};
