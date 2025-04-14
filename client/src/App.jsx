@@ -7,10 +7,14 @@ import ComplaintForm from './pages/ComplaintForm';
 import Login from "./pages/Login";
 import Footer from "./components/Footer";
 
+
+import ComplaintForm from './pages/ComplaintForm.jsx'
+
+
 function App() {
 
   return (
-    <> 
+    <>    
       <Router>
           <Navbar />
           <Routes>

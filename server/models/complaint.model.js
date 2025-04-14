@@ -65,4 +65,6 @@ complaintSchema.pre('save', function(next) {
   next();
 });
 
+
 export default mongoose.model('Complaint', complaintSchema);
+

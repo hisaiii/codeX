@@ -115,5 +115,4 @@ export const getNearbyComplaints = async (req, res) => {
 //     res.status(201).json({ message: 'Complaint created successfully', complaint });
 //   } catch (error) {
 //     res.status(400).json({ error: error.message });
-//   }
-// };
+
