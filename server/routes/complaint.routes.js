@@ -38,4 +38,6 @@ router.post('/create-complaint', upload.single('image'), createComplaint);
 // GET nearby
 router.get('/complaints/nearby', getNearbyComplaints);
 
+
 export default router;
+
