@@ -3,16 +3,23 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { ConnectDB } from './db/db.js';
 import authRoutes from './routes/auth.routes.js';
-import complaintRouter from "./routes/complaint.routes.js"
+import complaintRouter from "./routes/complaint.routes.js";
+import cookieParser from 'cookie-parser';
 dotenv.config();
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+// ✅ Setup CORS properly
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,   // important to allow cookies / tokens
+}));
 
-app.use("/api/auth", authRoutes);
-app.use("/api/complaint",complaintRouter)
+app.use(express.json()); // for parsing application/json
+app.use(cookieParser()); 
+// Your routes
+app.use("/api/user", authRoutes);
+app.use("/api/complaint", complaintRouter);
 
 ConnectDB();
 
-export  {app};
+export { app };

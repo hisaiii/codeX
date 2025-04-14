@@ -1,10 +1,12 @@
-// routes/authRoutes.js
 import express from "express";
-import { register, login } from "../controllers/auth.controller.js";
-
+import upload from "../middlewares/multer.js"; // multer middleware
+import { register, login,getProfile } from "../controllers/auth.controller.js";
+import { authenticateJWT } from "../middlewares/auth.middleware.js";
 const router = express.Router();
 
-router.post("/register", register);  // Register route
-router.post("/login", login);        // Login route
+router.post("/register", upload.single('profilePicture'), register);
+router.post("/login", login);
+router.get("/profile", authenticateJWT, getProfile);
+
 
 export default router;
