@@ -1,15 +1,17 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   return (
-    <nav className="bg-blue-400 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="text-2xl font-bold text-blue-600">Pathfix</div>
-        <ul className="flex space-x-6 text-gray-700">
-          <li><Link to="/report" className="hover:text-blue-600">Report Issue</Link></li>
-          <li><Link to="/login" className="hover:text-blue-600">Login</Link></li>
-        </ul>
+    <nav className="bg-[#60a5fa] shadow px-6 py-4 flex justify-between items-center">
+      {/* PathFix logo with link to home */}
+      <Link to="/" className="text-blue-800 font-bold text-2xl">
+        Pathfix
+      </Link>
+
+      {/* Right side nav options */}
+      <div className="space-x-4 text-black">
+        <Link to="/report" className="hover:underline">Report Issue</Link>
+        <Link to="/login" className="hover:underline">Login</Link>
       </div>
     </nav>
   );

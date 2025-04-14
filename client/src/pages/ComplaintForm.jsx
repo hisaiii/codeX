@@ -1,5 +1,3 @@
-
-
         import React, { useRef, useState, useEffect } from 'react';
         import axios from 'axios';
 
@@ -148,7 +146,7 @@
         };
 
         return (
-            <div className="max-w-xl mx-auto p-6 bg-white shadow-md rounded-xl mt-10">
+            <div className="max-w-xl mx-auto p-6 bg-white shadow-md rounded-xl mt-10 h-125">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">📸 Report an Issue</h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -215,4 +213,3 @@
         };
 
         export default ComplaintForm;
-
