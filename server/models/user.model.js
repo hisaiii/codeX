@@ -22,10 +22,4 @@ const userSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-<<<<<<< HEAD
 export default mongoose.model("User", userSchema);
-=======
-
-export default mongoose.model('User', userSchema);
-
->>>>>>> 65cdc8e62709a558c38fe074794ea12dedac624a
