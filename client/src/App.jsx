@@ -7,11 +7,11 @@ import ComplaintForm from "./pages/ComplaintForm";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
-
+import ReportError from './pages/ReportIssue';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-
-// ...same imports
+import { AuthContextProvider } from './contexts/UserAuthContext'; // Import the AuthContextProvider
+import { ToastProvider } from './contexts/ToastContext';
 
 const AppWrapper = () => {
   const location = useLocation();
@@ -19,14 +19,17 @@ const AppWrapper = () => {
 
   return (
     <>
+      {/* Navbar is not displayed on Dashboard */}
       {!isDashboard && <Navbar />}
 
+      {/* Routing configuration */}
       <Routes>
-      <Route path="/account-created" element={<AccountCreated />} />
+        <Route path="/account-created" element={<AccountCreated />} />
         <Route path="/" element={<Home />} />
         <Route path="/report" element={<ComplaintForm />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/reporterror" element={<ReportError />} />
         <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
 
@@ -39,7 +42,11 @@ const AppWrapper = () => {
 function App() {
   return (
     <Router>
-      <AppWrapper />
+      {/* Wrap the whole app with AuthContextProvider */}
+      <ToastProvider>      <AuthContextProvider>
+        <AppWrapper />
+      </AuthContextProvider></ToastProvider>
+
     </Router>
   );
 }

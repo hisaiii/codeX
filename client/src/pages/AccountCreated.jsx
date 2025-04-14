@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import  registered from '../images/registered.jpg';
+
 
 const AccountCreated = () => {
   const location = useLocation();
@@ -16,7 +18,7 @@ const AccountCreated = () => {
           </div>
         </div>
 
-        <img src="/images/success.png" alt="success" className="mx-auto w-32 h-32 my-4" />
+        <img src={registered} alt="success" className="mx-auto w-32 h-32 my-4" />
 
         <h2 className="text-xl font-semibold">Congratulations <span className="text-blue-500">@{username}</span>!</h2>
         <p className="mt-2">Your account has been successfully created.</p>

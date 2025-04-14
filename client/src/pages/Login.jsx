@@ -1,29 +1,55 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // <-- Import for navigation
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/UserAuthContext.jsx'; // Your AuthContext
+import api from "../utils/axiosApi"; // One level up from src/pages/
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    phoneNumber: '',
-    password: ''
-  });
+  const navigate = useNavigate();
+  const { setUser, fetchUser } = useAuth();
 
-  const navigate = useNavigate(); // <-- Hook to redirect
+  const [formData, setFormData] = useState({
+    emailOrPhone: '',
+    password: '',
+    role: 'user', // default role
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login data submitted:", formData);
-    
-    // ⬇️ Placeholder for actual API login
-    // After successful login, navigate to dashboard
-    navigate('/dashboard');
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/user/login`,
+        formData,
+        { withCredentials: true }
+      );
+
+      // Set user immediately (optional)
+      console.log('this is user response after login', res);
+      setUser(res.data.user);
+
+      // Re-fetch current user (to refresh from backend)
+      await fetchUser();
+      
+      // Show success message (optional)
+      // showToast('Login successful', 'success');
+
+      // Redirect based on role
+      if (formData.role === 'admin') {
+        navigate('/admin'); // Redirect to admin page
+      } else if (formData.role === 'authority') {
+        navigate('/authority/dashboard'); // Redirect to authority dashboard
+      } else {
+        navigate('/dashboard'); // Redirect to user home
+      }
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.msg || 'Login Failed');
+    }
   };
 
   return (
@@ -35,24 +61,36 @@ const Login = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Role Selector */}
           <div>
-            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-600">Phone Number</label>
-            <div className="flex mt-1">
-              <span className="inline-flex items-center px-3 bg-blue-400 text-white rounded-l border-r border-blue-500">
-                +91
-              </span>
-              <input
-                type="tel"
-                id="phoneNumber"
-                name="phoneNumber"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                className="block w-full bg-blue-400 text-white p-2 rounded-r focus:outline-none"
-                required
-              />
-            </div>
+            <label htmlFor="role" className="block text-sm font-medium text-gray-600">Select Role</label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="w-full p-2 mt-1 rounded border bg-blue-400 text-white"
+            >
+              <option value="user">User</option>
+              <option value="authority">Authority</option>
+              <option value="admin">Admin</option>
+            </select>
           </div>
 
+          {/* Email or Phone */}
+          <div>
+            <label htmlFor="emailOrPhone" className="block text-sm font-medium text-gray-600">Email or Phone</label>
+            <input
+              type="text"
+              id="emailOrPhone"
+              name="emailOrPhone"
+              value={formData.emailOrPhone}
+              onChange={handleChange}
+              className="block w-full bg-blue-400 text-white p-2 rounded focus:outline-none"
+              required
+            />
+          </div>
+
+          {/* Password */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-600">Password</label>
             <input
@@ -61,7 +99,7 @@ const Login = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="mt-1 block w-full bg-blue-400 text-white p-2 rounded focus:outline-none"
+              className="block w-full bg-blue-400 text-white p-2 rounded focus:outline-none"
               required
             />
           </div>
