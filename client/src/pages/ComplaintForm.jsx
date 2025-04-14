@@ -1,218 +1,325 @@
+import React, { useRef, useState, useEffect } from 'react';
+import axios from 'axios';
 
+const ComplaintForm = () => {
+  // Refs for camera
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
-        import React, { useRef, useState, useEffect } from 'react';
-        import axios from 'axios';
+  // Form state
+  const [formData, setFormData] = useState({
+    damageType: 'pothole',
+    description: ''
+  });
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [coords, setCoords] = useState({ lat: null, lng: null });
+  const [locationDetails, setLocationDetails] = useState({
+    address: '',
+    city: '',
+    district: '',
+    state: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [cameraOn, setCameraOn] = useState(false);
+  const [error, setError] = useState('');
 
-        const ComplaintForm = () => {
-        const videoRef = useRef(null);
-        const canvasRef = useRef(null);
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        const [capturedImage, setCapturedImage] = useState(null);
-        const [description, setDescription] = useState('');
-        const [coords, setCoords] = useState({ lat: null, lng: null });
-        const [address, setAddress] = useState('');
-        const [loading, setLoading] = useState(false);
-        const [cameraOn, setCameraOn] = useState(false);
+  // Extract location details from reverse geocoding
+  const extractLocationDetails = (data) => {
+    const details = {
+      address: data.display_name || '',
+      city: data.address?.city || data.address?.town || data.address?.village || '',
+      district: data.address?.county || '',
+      state: data.address?.state || ''
+    };
+    setLocationDetails(details);
+    return details;
+  };
 
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // 📍 Reverse Geocode to get detailed address
+  const fetchAddressDetails = async (lat, lng) => {
+    try {
+      const res = await axios.get(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
+        {
+            headers: {
+                'Accept': 'application/json'
+              }
+        }
+      );
+      if (res.data) {
+        return extractLocationDetails(res.data);
+      }
+      throw new Error('No address data received');
+    } catch (err) {
+      console.error('Geocoding error:', err);
+      setError('Failed to fetch location details');
+      return null;
+    }
+  };
 
-        const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY; // <-- Replace with your actual key
+  // 🌍 Get location
+  useEffect(() => {
+    const fetchLocation = () => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const { latitude, longitude } = pos.coords;
+          setCoords({ lat: latitude, lng: longitude });
+          await fetchAddressDetails(latitude, longitude);
+        },
+        (err) => {
+          setError('Location access denied. Please enable permissions.');
+          console.error(err);
+        }
+      );
+    };
 
-        // 📍 Reverse Geocode to get address
-        const fetchAddress = async (lat, lng) => {
-            try {
-            const res = await axios.get(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
-                {
-                headers: {
-                    'User-Agent': 'YourAppName/1.0 (your-email@example.com)', // Replace with your app name and email
-                },
-                }
-            );
-            if (res.data && res.data.display_name) {
-                setAddress(res.data.display_name);
-                console.log('Detected Address:', res.data.display_name);
-            } else {
-                console.error('No address found');
-            }
-            } catch (err) {
-            console.error('Failed to fetch address from Nominatim:', err);
-            }
-        };
+    fetchLocation();
+    const interval = setInterval(fetchLocation, 10000); // Refresh every 10 seconds
+    return () => clearInterval(interval);
+  }, []);
 
-        // 🌍 Get location
-        useEffect(() => {
-            const fetchLocation = () => {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                const { latitude, longitude } = pos.coords;
-                setCoords({ lat: latitude, lng: longitude });
-                fetchAddress(latitude, longitude); // 👈 Reverse geocode
-                },
-                (err) => {
-                alert('Location access denied ❌');
-                console.error(err);
-                }
-            );
-            };
+  // 🎥 Camera handling
+  useEffect(() => {
+    const enableCamera = async () => {
+      if (cameraOn && videoRef.current) {
+        try {
+          const constraints = {
+            video: {
+              facingMode: isMobile ? { exact: 'environment' } : 'user',
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+            audio: false,
+          };
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          videoRef.current.srcObject = stream;
+        } catch (err) {
+          setError('Camera access denied');
+          console.error(err);
+        }
+      }
+    };
+    enableCamera();
+  }, [cameraOn]);
 
-            fetchLocation(); // Get the location on component mount
-            const locationInterval = setInterval(fetchLocation, 5000); // Refresh location every 5 seconds (optional)
-            return () => clearInterval(locationInterval); // Clean up interval on component unmount
-        }, []);
+  const startCamera = () => setCameraOn(true);
 
-        // 🎥 Start camera
-        useEffect(() => {
-            const enableCamera = async () => {
-            if (cameraOn && videoRef.current) {
-                try {
-                const constraints = {
-                    video: {
-                    facingMode: isMobile ? { exact: 'environment' } : 'user',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                    },
-                    audio: false,
-                };
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                videoRef.current.srcObject = stream;
-                } catch (err) {
-                alert('Could not access camera ❌');
-                console.error(err);
-                }
-            }
-            };
-            enableCamera();
-        }, [cameraOn]);
+  const captureImage = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
 
-        const startCamera = () => setCameraOn(true);
+    canvas.toBlob((blob) => {
+      setCapturedImage(new File([blob], 'complaint_photo.jpg', { type: 'image/jpeg' }));
+    }, 'image/jpeg', 0.9);
+  };
 
-        const captureImage = () => {
-            const video = videoRef.current;
-            const canvas = canvasRef.current;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-            canvas.toBlob((blob) => {
-            setCapturedImage(new File([blob], 'snapshot.jpg', { type: 'image/jpeg' }));
-            }, 'image/jpeg');
-        };
+    // Validate required fields
+    if (!capturedImage) {
+      setError('Please capture a photo of the issue');
+      setLoading(false);
+      return;
+    }
+    if (!coords.lat || !coords.lng) {
+      setError('Location not detected. Please enable GPS.');
+      setLoading(false);
+      return;
+    }
+    if (!locationDetails.city || !locationDetails.district || !locationDetails.state) {
+      setError('Could not determine complete location details');
+      setLoading(false);
+      return;
+    }
 
-        const handleSubmit = async (e) => {
-            e.preventDefault();
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('image', capturedImage);
+      formDataToSend.append('damageType', formData.damageType);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('lat', coords.lat);
+      formDataToSend.append('lng', coords.lng);
+      formDataToSend.append('address', locationDetails.address);
+      formDataToSend.append('city', locationDetails.city);
+      formDataToSend.append('district', locationDetails.district);
+      formDataToSend.append('state', locationDetails.state);
 
-            // Early exit if conditions are not met
-            if (!capturedImage) {
-            alert('❗ Please capture a photo before submitting.');
-            return;
-            }
-            if (!coords.lat || !coords.lng) {
-            alert('❗ Location not yet detected. Please allow location access.');
-            return;
-            }
-            if (!address) {
-            alert('❗ Address not yet detected. Please wait a moment...');
-            return;
-            }
+      // JWT will be automatically sent via cookies
+      const res = await axios.post('http://localhost:5000/api/complaint/create-complaint', formDataToSend, {
+        withCredentials: true // Important for sending cookies
+      });
+      
+      // Reset form on success
+      setFormData({
+        damageType: 'pothole',
+        description: ''
+      });
+      setCapturedImage(null);
+      setCameraOn(false);
+      alert('Complaint submitted successfully!');
+    } catch (err) {
+      console.error('Submission error:', err);
+      setError(err.response?.data?.message || 'Failed to submit complaint');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            // If all conditions are met, submit the complaint
-            setLoading(true);
-            const formData = new FormData();
-            formData.append('description', description);
-            formData.append('userId', '67fbbf3d5b9c10e768d4fc36'); // Replace with dynamic user ID
-            formData.append('image', capturedImage);
-            formData.append('lat', coords.lat);
-            formData.append('lng', coords.lng);
-            formData.append('address', address);
+  return (
+    <div className="max-w-xl mx-auto p-6 bg-white shadow-lg rounded-xl mt-10">
+      <h2 className="text-2xl font-bold text-blue-700 mb-6">Report Road Issue</h2>
 
-            try {
-            const res = await axios.post('http://localhost:5000/api/complaint/create-complaint', formData);
-            console.log('✅ Complaint submitted:', res.data);
-            alert('Complaint submitted successfully ✅');
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+          {error}
+        </div>
+      )}
 
-            // Reset form
-            setDescription('');
-            setCapturedImage(null);
-            setCameraOn(false);
-            setAddress('');
-            setCoords({ lat: null, lng: null });
-            } catch (err) {
-            console.error('❌ Submission error:', err);
-            alert('Error submitting complaint ❌');
-            } finally {
-            setLoading(false);
-            }
-        };
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Damage Type */}
+        <div>
+          <label className="block text-gray-700 font-medium mb-2">
+            Type of Damage *
+          </label>
+          <select
+            name="damageType"
+            value={formData.damageType}
+            onChange={handleChange}
+            className="w-full p-3 border border-gray-300 rounded-md bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="pothole">Pothole</option>
+            <option value="crack">Road Crack</option>
+            <option value="manhole">Manhole Issue</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
 
-        return (
-            <div className="max-w-xl mx-auto p-6 bg-white shadow-md rounded-xl mt-10">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">📸 Report an Issue</h2>
+        {/* Description */}
+        <div>
+          <label className="block text-gray-700 font-medium mb-2">
+            Description *
+          </label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            className="w-full p-3 border border-gray-300 rounded-md bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
+            rows="4"
+            placeholder="Describe the issue in detail..."
+            required
+          />
+        </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                <label className="block text-gray-700 font-medium mb-1">Description</label>
-                <textarea
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    rows="3"
-                    placeholder="Describe the issue..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    required
-                />
-                </div>
-
-                <div className="space-y-2">
-                {!cameraOn ? (
-                    <button
-                    type="button"
-                    onClick={startCamera}
-                    className="w-full bg-indigo-600 text-white py-2 rounded-md font-semibold hover:bg-indigo-700"
-                    >
-                    🎥 Start Camera
-                    </button>
-                ) : (
-                    <div className="flex flex-col items-center gap-2">
-                    <video ref={videoRef} autoPlay playsInline className="w-full rounded-md shadow-md" />
-                    <button
-                        type="button"
-                        onClick={captureImage}
-                        className="bg-pink-600 text-white px-4 py-2 rounded-md hover:bg-pink-700"
-                    >
-                        📸 Capture Photo
-                    </button>
-                    </div>
-                )}
-                </div>
-
-                {capturedImage && (
-                <div>
-                    <p className="text-gray-600 text-sm mb-1">📷 Captured Image Preview:</p>
-                    <img src={URL.createObjectURL(capturedImage)} alt="Snapshot" className="rounded-md shadow-md" />
-                </div>
-                )}
-
-                {address && (
-                <div className="text-sm text-gray-700">
-                    📍 <strong>Address:</strong> {address}
-                </div>
-                )}
-
-                <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-green-600 text-white font-semibold py-2 rounded-md hover:bg-green-700"
-                >
-                {loading ? 'Submitting...' : '🚀 Submit Complaint'}
-                </button>
-            </form>
-
-            <canvas ref={canvasRef} className="hidden" />
+        {/* Photo Capture */}
+        <div className="space-y-4">
+          <label className="block text-gray-700 font-medium mb-2">
+            Photo Evidence *
+          </label>
+          
+          {!cameraOn ? (
+            <button
+              type="button"
+              onClick={startCamera}
+              className="w-full bg-blue-600 text-white py-3 rounded-md font-semibold hover:bg-blue-700 transition-colors"
+            >
+              🎥 Open Camera
+            </button>
+          ) : (
+            <div className="flex flex-col items-center gap-4">
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                className="w-full rounded-md shadow-md border border-gray-200"
+              />
+              <button
+                type="button"
+                onClick={captureImage}
+                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                📸 Capture Photo
+              </button>
             </div>
-        );
-        };
+          )}
 
-        export default ComplaintForm;
+          {capturedImage && (
+            <div className="mt-4">
+              <p className="text-gray-600 mb-2">Captured Image:</p>
+              <img 
+                src={URL.createObjectURL(capturedImage)} 
+                alt="Complaint evidence" 
+                className="rounded-md shadow-md max-h-64 object-contain border border-gray-200"
+              />
+            </div>
+          )}
+        </div>
 
+        {/* Location Info */}
+        <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
+          <h3 className="font-medium text-blue-800 mb-2">Location Details</h3>
+          {locationDetails.address ? (
+            <div className="space-y-2">
+              <p className="text-gray-700">{locationDetails.address}</p>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="font-medium">City:</span> {locationDetails.city || 'Not detected'}
+                </div>
+                <div>
+                  <span className="font-medium">District:</span> {locationDetails.district || 'Not detected'}
+                </div>
+                <div>
+                  <span className="font-medium">State:</span> {locationDetails.state || 'Not detected'}
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Coordinates: {coords.lat?.toFixed(6)}, {coords.lng?.toFixed(6)}
+              </p>
+            </div>
+          ) : (
+            <p className="text-gray-500">Fetching location details...</p>
+          )}
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={loading || !capturedImage || !coords.lat || !locationDetails.city}
+          className={`w-full py-3 px-4 rounded-md font-semibold text-white ${
+            loading || !capturedImage || !coords.lat || !locationDetails.city
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-green-600 hover:bg-green-700'
+          } transition-colors`}
+        >
+          {loading ? (
+            <span className="flex items-center justify-center">
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Submitting...
+            </span>
+          ) : 'Submit Complaint'}
+        </button>
+      </form>
+
+      <canvas ref={canvasRef} className="hidden" />
+    </div>
+  );
+};
+
+export default ComplaintForm;

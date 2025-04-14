@@ -1,7 +1,7 @@
 // src/pages/Login.jsx
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import {Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/UserAuthContext.jsx"; // Your AuthContext
 import { useToast } from "../contexts/ToastContext.jsx";
 const Login = () => {
@@ -95,13 +95,17 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white p-2 rounded"
+            className="w-full bg-blue-500 text-white p-2 rounded cursor-pointer"
           >
             Login
           </button>
 
         </form>
+        <Link to="/register" className="hover:underline pt-4 font-bold">Register first</Link>
+
       </div>
+
+      
     </div>
   );
 };

@@ -13,7 +13,7 @@ export const AuthContextProvider = ({ children }) => {
     try {
       const response = await api.get("/user/profile", { withCredentials: true });
       console.log("this is user response ",response);
-      setUser(response.data.data);  // assuming user data is inside response.data.data
+      setUser(response.data.user);  // assuming user data is inside response.data.data
     } catch (error) {
       console.error("Error fetching user:", error.message || error);
       setUser(null);

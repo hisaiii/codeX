@@ -34,7 +34,7 @@ const Register = () => {
 
     if (formData.password !== formData.confirmPassword) {
     //   alert("Passwords do not match!");
-      showToast("Password does not match","info");
+      showToast("Password does not match","info")
       return;
     }
 

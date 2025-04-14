@@ -1,13 +1,12 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaUserCircle } from 'react-icons/fa';
-import { useAuth } from '../contexts/UserAuthContext.jsx'; // correct path
+import { useAuth } from '../contexts/UserAuthContext.jsx';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  console.log("this is user in navbar ",user);
-  
+
   const handleProfileClick = () => {
     navigate('/profile');
   };
@@ -18,44 +17,44 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-blue-400 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="text-2xl font-bold text-blue-600">
-          <Link to="/">PathFix</Link>
-        </div>
+    <nav className="bg-[#60a5fa] shadow px-6 py-4 flex justify-between items-center">
+      {/* Logo (styled like first code) */}
+      <Link to="/" className="text-blue-800 font-bold text-2xl">
+        Pathfix
+      </Link>
 
-        <ul className="flex space-x-6 text-gray-700 items-center">
-          <li>
-            <Link to="/report" className="hover:text-blue-600">Report Issue</Link>
-          </li>
+      {/* Navigation (styled like first code but with second code's logic) */}
+      <div className="flex w-[30%] text-black text-lg">
+        <Link to="/report" 
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 mx-4 py-2 rounded-md w-40"
+              >Report Issue</Link>
 
-          {user ? (
-            <>
-              <li>
-                <button onClick={handleProfileClick} className="flex items-center space-x-2">
-                  {user.profileImage ? (
-                    <img
-                      src={user.profileImage}
-                      alt="Profile"
-                      className="w-8 h-8 rounded-full object-cover border-2 border-blue-600"
-                    />
-                  ) : (
-                    <FaUserCircle className="w-8 h-8 text-blue-600" />
-                  )}
-                </button>
-              </li>
-              <li>
-                <button onClick={handleLogout} className="hover:text-blue-600 text-sm">
-                  Logout
-                </button>
-              </li>
-            </>
-          ) : (
-            <li>
-              <Link to="/login" className="hover:text-blue-600">Login</Link>
-            </li>
-          )}
-        </ul>
+        {user ? (
+          <>
+            <button 
+              onClick={handleProfileClick} 
+              className="flex items-center text-lg space-x-2 hover:underline cursor-pointer"
+            >
+              {user.profileImage ? (
+                <img
+                  src={user.profileImage}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full object-cover border-2 border-blue-800"
+                />
+              ) : (
+                <FaUserCircle className="w-8 h-8 text-blue-800" />
+              )}
+            </button>
+            <button 
+              onClick={handleLogout} 
+              className="hover:underline text-lg px-2 text-blue-800 cursor-pointer"
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <Link to="/login" className="hover:underline text-blue-800 cursor-pointer">Login</Link>
+        )}
       </div>
     </nav>
   );

@@ -27,7 +27,8 @@ const complaintSchema = new mongoose.Schema({
     },
     coordinates: {
       type: [Number], // [longitude, latitude]
-      required: true
+      required: true,
+      index: '2dsphere'
     },
     address: { type: String }
   },
@@ -42,10 +43,20 @@ const complaintSchema = new mongoose.Schema({
     enum: ['pending', 'in-progress', 'resolved', 'rejected'],
     default: 'pending'
   },
-  priority: {
+  city: {
     type: String,
-    enum: ['low', 'medium', 'high'],
-    default: 'medium'
+    required: true,
+    index: true
+  },
+  district: {
+    type: String,
+    required: true,
+    index: true
+  },
+  state: {
+    type: String,
+    required: true,
+    index: true
   },
   upvotes: [
     {
@@ -54,17 +65,23 @@ const complaintSchema = new mongoose.Schema({
     }
   ],
   comments: [commentSchema],
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Authority'
+  },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date }
+}, { 
+  timestamps: true 
 });
 
-complaintSchema.index({ location: "2dsphere" }); // for geo filtering
+// Compound index for efficient location-based queries
+complaintSchema.index({ city: 1, district: 1, state: 1 });
+complaintSchema.index({ location: '2dsphere' });
 
 complaintSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();
 });
 
-
 export default mongoose.model('Complaint', complaintSchema);
-

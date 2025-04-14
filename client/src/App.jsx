@@ -10,6 +10,8 @@ import Footer from "./components/Footer";
 import AccountCreated from './pages/AccountCreated';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthContextProvider } from './contexts/UserAuthContext';
+import Profile from './pages/Profile';
+import CityFilterComplaints from './pages/CityFilterComplaints';
 function App() {
 
   return (
@@ -48,6 +50,18 @@ function App() {
             path="/account-created"
             element={
               < AccountCreated/>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              < Profile/>
+            }
+          />
+          <Route
+            path="/complaints"
+            element={
+              < CityFilterComplaints/>
             }
           />
         </Routes>

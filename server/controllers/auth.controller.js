@@ -3,7 +3,7 @@ import User from "../models/user.model.js"; // Correct import
 import Authority from "../models/authority.model.js"; // Correct import
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import cloudinary from "../utils/cloudinary.js";
+import {cloudinary,uploadToCloudinary} from "../utils/cloudinary.js";
 import fs from "fs";
 
 // =======================
@@ -18,12 +18,13 @@ export const register = async (req, res) => {
       const authorityExist = await Authority.findOne({ email });
       if (authorityExist) return res.status(400).json({ msg: "Authority already exists" });
 
-      // Save profile picture
+      // Handle profile picture upload
       let profilePictureUrl = "";
       if (req.file) {
-        const result = await cloudinary.uploader.upload(req.file.path, { folder: "pathfix-profiles" });
+        const buffer = fs.readFileSync(req.file.path);
+        const result = await uploadToCloudinary(buffer);
         profilePictureUrl = result.secure_url;
-        fs.unlinkSync(req.file.path);
+        fs.unlinkSync(req.file.path); // Clean up temp file
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -41,15 +42,16 @@ export const register = async (req, res) => {
       return res.status(201).json({ msg: "Authority Registered Successfully" });
 
     } else {
-      // User or Admin
+      // User or Admin registration
       const userExist = await User.findOne({ email });
       if (userExist) return res.status(400).json({ msg: "User already exists" });
 
       let profilePictureUrl = "";
       if (req.file) {
-        const result = await cloudinary.uploader.upload(req.file.path, { folder: "pathfix-profiles" });
+        const buffer = fs.readFileSync(req.file.path);
+        const result = await uploadToCloudinary(buffer);
         profilePictureUrl = result.secure_url;
-        fs.unlinkSync(req.file.path);
+        fs.unlinkSync(req.file.path); // Clean up temp file
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -67,7 +69,16 @@ export const register = async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ msg: "Registration Error", error });
+    // Clean up temp file if error occurs
+    if (req.file?.path) {
+      fs.unlinkSync(req.file.path).catch(err => 
+        console.error("Error deleting temp file:", err)
+      );
+    }
+    res.status(500).json({ 
+      msg: "Registration Error",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
@@ -158,5 +169,15 @@ export const getProfile = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: "Error fetching profile", error });
+  }
+};
+
+export const logoutUser = (req, res) => {
+  try {
+    res.clearCookie("token", { path: "/", httpOnly: true, sameSite: "lax", secure: false });
+    return res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.status(500).json({ message: "Logout failed" });
   }
 };
