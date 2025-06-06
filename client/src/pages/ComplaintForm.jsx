@@ -1,11 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react';
 import axios from 'axios';
+import {useToast} from "../contexts/ToastContext";
 
 const ComplaintForm = () => {
   // Refs for camera
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-
+  const {showToast} = useToast();
   // Form state
   const [formData, setFormData] = useState({
     damageType: 'pothole',
@@ -29,7 +30,8 @@ const ComplaintForm = () => {
   const extractLocationDetails = (data) => {
     const details = {
       address: data.display_name || '',
-      city: data.address?.city || data.address?.town || data.address?.village || '',
+      city: data.address?.city || data.address?.town 
+      || data.address?.village || data.address?.county ||'',
       district: data.address?.county || '',
       state: data.address?.state || ''
     };
@@ -41,21 +43,17 @@ const ComplaintForm = () => {
   const fetchAddressDetails = async (lat, lng) => {
     try {
       const res = await axios.get(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
-        {
-            headers: {
-                'Accept': 'application/json'
-              }
-        }
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
       );
-      if (res.data) {
-        return extractLocationDetails(res.data);
-      }
-      throw new Error('No address data received');
+      return extractLocationDetails(res.data);
     } catch (err) {
-      console.error('Geocoding error:', err);
-      setError('Failed to fetch location details');
-      return null;
+      console.error("Geocoding failed, using defaults");
+      return {
+        address: "Unknown location",
+        city: "Unknown city",
+        district: "Unknown district",
+        state: "Unknown state"
+      };
     }
   };
 
@@ -124,6 +122,25 @@ const ComplaintForm = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const verifyImage = async (image) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', image);
+  
+      const response = await axios.post('http://127.0.0.1:8000/predict', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+      console.log("this is response from ml modle",response);
+      return response.data.prediction; // "road" or "non-road"
+    } catch (err) {
+      console.error('Error verifying image:', err);
+      return 'error'; // In case of an error, we can return an error message
+    }
+  };
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -132,6 +149,14 @@ const ComplaintForm = () => {
     // Validate required fields
     if (!capturedImage) {
       setError('Please capture a photo of the issue');
+      setLoading(false);
+      return;
+    }
+    const imagePrediction = await verifyImage(capturedImage);
+    console.log("this is image prediciton ",imagePrediction);
+    if (imagePrediction === 'non-road') {
+      setError('The image does not appear to be related to a road issue.');
+      showToast("This is not road!please upload road image","error");
       setLoading(false);
       return;
     }

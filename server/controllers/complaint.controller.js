@@ -115,7 +115,8 @@ export const getNearbyComplaints = async (req, res) => {
 // Get complaints for logged-in user
 export const getUserComplaints = async (req, res) => {
   try {
-    const complaints = await Complaint.find({ user: req.user._id })
+    console.log("this is route for geting users complaint s",req.user);
+    const complaints = await Complaint.find({ user: req.user.userId })
       .sort({ createdAt: -1 });
     res.json(complaints);
   } catch (error) {

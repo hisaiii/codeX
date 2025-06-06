@@ -12,6 +12,9 @@ import { ToastProvider } from './contexts/ToastContext';
 import { AuthContextProvider } from './contexts/UserAuthContext';
 import Profile from './pages/Profile';
 import CityFilterComplaints from './pages/CityFilterComplaints';
+import Dashboard from './pages/Dashboard';
+import TrackMyComplaints from './pages/TrackMyComplaints';
+import AuthorityDashboard from './pages/AuthorityDashboard';
 function App() {
 
   return (
@@ -62,6 +65,24 @@ function App() {
             path="/complaints"
             element={
               < CityFilterComplaints/>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              < Dashboard/>
+            }
+          />
+          <Route
+            path="/authority-dashboard"
+            element={
+              < AuthorityDashboard/>
+            }
+          />
+          <Route
+            path="/track-mycomplaints"
+            element={
+              < TrackMyComplaints/>
             }
           />
         </Routes>
